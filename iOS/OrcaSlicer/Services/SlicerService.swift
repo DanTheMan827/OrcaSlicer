@@ -21,30 +21,25 @@ final class SlicerService: Sendable {
         // For now, simulate slicing with a placeholder implementation
         // that demonstrates the async pattern.
 
-        return try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                // Simulate progress
-                for i in 0...10 {
-                    let progress = Double(i) / 10.0
-                    progressHandler(progress)
-                    Thread.sleep(forTimeInterval: 0.1)
-                }
-
-                // In production, this calls:
-                // OrcaSlicerBridge.shared.slice(modelPath:profileDict:printerDict:)
-                let outputDir = FileManager.default.temporaryDirectory
-                let gcodeURL = outputDir.appendingPathComponent("\(model.name).gcode")
-
-                let result = SliceResult(
-                    gcodeURL: gcodeURL,
-                    estimatedTime: 3600, // placeholder
-                    estimatedFilament: 12.5, // placeholder
-                    layerCount: 200, // placeholder
-                    error: nil
-                )
-                continuation.resume(returning: result)
-            }
+        // Simulate progress updates
+        for i in 0...10 {
+            let progress = Double(i) / 10.0
+            progressHandler(progress)
+            try await Task.sleep(nanoseconds: 100_000_000)
         }
+
+        // In production, this calls:
+        // OrcaSlicerBridge.shared.slice(modelPath:profileDict:printerDict:)
+        let outputDir = FileManager.default.temporaryDirectory
+        let gcodeURL = outputDir.appendingPathComponent("\(model.name).gcode")
+
+        return SliceResult(
+            gcodeURL: gcodeURL,
+            estimatedTime: 3600, // placeholder
+            estimatedFilament: 12.5, // placeholder
+            layerCount: 200, // placeholder
+            error: nil
+        )
     }
 
     /// Validate that a model file can be loaded.
