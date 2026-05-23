@@ -77,6 +77,12 @@ struct ModelTransformView: View {
         VStack(spacing: 8) {
             Toggle("Uniform Scale", isOn: $transform.uniformScale)
                 .font(.caption)
+                .onChange(of: transform.uniformScale) { _, isUniform in
+                    if isUniform {
+                        transform.scaleY = transform.scaleX
+                        transform.scaleZ = transform.scaleX
+                    }
+                }
 
             if transform.uniformScale {
                 axisControl(label: "All", value: $transform.scaleX, range: 1...500, unit: "%")

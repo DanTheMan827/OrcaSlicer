@@ -66,18 +66,19 @@ struct STLParser {
     /// Binary STL has an 80-byte header + 4-byte triangle count.
     /// ASCII STL starts with "solid".
     private static func isBinarySTL(_ data: Data) -> Bool {
-        guard data.count > 84 else { return false }
+        // Binary STL requires at least 84 bytes (header + triangle count)
+        guard data.count >= 84 else { return false }
 
         // Check if starts with "solid" (ASCII indicator)
         let header = String(data: data.prefix(5), encoding: .ascii) ?? ""
         if header.lowercased() == "solid" {
             // Could still be binary if the header happens to start with "solid"
-            // Check if the file size matches expected binary size
+            // Validate against the binary format equation: size == 84 + triangleCount * 50
             let triangleCount = data.withUnsafeBytes { buffer in
                 buffer.load(fromByteOffset: 80, as: UInt32.self)
             }
             let expectedSize = 84 + Int(triangleCount) * 50
-            if data.count == expectedSize {
+            if data.count == expectedSize && triangleCount > 0 {
                 return true
             }
             // Check if the file contains "endsolid" (ASCII indicator)
@@ -85,7 +86,8 @@ struct STLParser {
                str.contains("endsolid") {
                 return false
             }
-            return true
+            // File doesn't match binary size and has no endsolid — likely corrupt ASCII
+            return data.count == expectedSize
         }
         return true
     }

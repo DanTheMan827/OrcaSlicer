@@ -89,10 +89,14 @@ build_deps() {
         -G Ninja
 
     # Build only the dependencies needed for libslic3r (not wxWidgets, GLEW, etc.)
-    ninja -j "$NPROC" dep_boost dep_tbb dep_ZLIB dep_EXPAT dep_PNG dep_JPEG dep_OpenSSL \
-        dep_Eigen3 dep_CGAL dep_GMP dep_MPFR dep_NLopt dep_Cereal dep_qhull \
-        dep_OCCT dep_OpenCV dep_Draco dep_Clipper2 2>/dev/null || \
-    cmake --build . --config "$BUILD_TYPE" -j "$NPROC"
+    if command -v ninja &>/dev/null; then
+        ninja -j "$NPROC" dep_boost dep_tbb dep_ZLIB dep_EXPAT dep_PNG dep_JPEG dep_OpenSSL \
+            dep_Eigen3 dep_CGAL dep_GMP dep_MPFR dep_NLopt dep_Cereal dep_qhull \
+            dep_OCCT dep_OpenCV dep_Draco dep_Clipper2 || \
+        cmake --build . --config "$BUILD_TYPE" -j "$NPROC"
+    else
+        cmake --build . --config "$BUILD_TYPE" -j "$NPROC"
+    fi
 
     echo ">>> Dependencies for $PLATFORM built successfully."
 }

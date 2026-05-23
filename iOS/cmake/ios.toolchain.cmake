@@ -46,6 +46,10 @@ if(IOS_PLATFORM STREQUAL "SIMULATOR64")
     )
 endif()
 
+if(NOT CMAKE_OSX_SYSROOT OR CMAKE_OSX_SYSROOT STREQUAL "")
+    message(FATAL_ERROR "iOS SDK not found. Ensure Xcode is installed and xcode-select points to a valid Xcode installation.")
+endif()
+
 # Compiler settings
 set(CMAKE_C_COMPILER_WORKS TRUE)
 set(CMAKE_CXX_COMPILER_WORKS TRUE)
