@@ -55,12 +55,12 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           set -e
-          DEPS_DIR="${{ github.workspace }}/deps"
-          DEPS_BUILD_DIR="$DEPS_DIR/build/ios-arm64"
+          IOS_DEPS_DIR="${{ github.workspace }}/iOS/deps"
+          DEPS_BUILD_DIR="${{ github.workspace }}/deps/build/ios-arm64"
           mkdir -p "$DEPS_BUILD_DIR"
           cd "$DEPS_BUILD_DIR"
 
-          cmake "$DEPS_DIR" \
+          cmake "$IOS_DEPS_DIR" \
             -G Ninja \
             -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/iOS/cmake/ios.toolchain.cmake" \
             -DIOS_PLATFORM=OS \
@@ -68,7 +68,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
             -DDESTDIR="$DEPS_BUILD_DIR/OrcaSlicer_dep" \
-            -DDEP_DOWNLOAD_DIR="$DEPS_DIR/DL_CACHE"
+            -DDEP_DOWNLOAD_DIR="${{ github.workspace }}/deps/DL_CACHE"
 
           cmake --build . --config Release --target deps
 
