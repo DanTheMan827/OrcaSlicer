@@ -22,7 +22,6 @@ targets:
     sources:
       - path: OrcaSlicer
         excludes:
-          - "Package.resolved"
           - "Preview Content"
     resources:
       - path: OrcaSlicer/Resources/Assets.xcassets
@@ -42,6 +41,28 @@ targets:
         SWIFT_EMIT_LOC_STRINGS: "YES"
         CLANG_CXX_LANGUAGE_STANDARD: "c++17"
         GCC_INPUT_FILETYPE: "sourcecode.cpp.objcpp"
+        # libslic3r linkage - paths set after running build_libslic3r_ios.sh
+        HEADER_SEARCH_PATHS: >
+          $(inherited)
+          $(SRCROOT)/../src
+          $(SRCROOT)/../src/libslic3r
+          $(SRCROOT)/build/device/src/libslic3r
+          $(SRCROOT)/build/deps/OS/OrcaSlicer_dep/usr/local/include
+          $(SRCROOT)/build/deps/OS/OrcaSlicer_dep/usr/local/include/eigen3
+        LIBRARY_SEARCH_PATHS: >
+          $(inherited)
+          $(SRCROOT)/build/device/src/libslic3r
+          $(SRCROOT)/build/deps/OS/OrcaSlicer_dep/usr/local/lib
+        OTHER_LDFLAGS: >
+          $(inherited)
+          -llibslic3r
+          -llibslic3r_cgal
+          -lz
+          -lc++
+        # Set ORCA_HAS_LIBSLIC3R=1 when libslic3r is built, 0 for stub mode
+        GCC_PREPROCESSOR_DEFINITIONS: >
+          $(inherited)
+          ORCA_HAS_LIBSLIC3R=0
       configs:
         Debug:
           SWIFT_OPTIMIZATION_LEVEL: "-Onone"
@@ -49,6 +70,10 @@ targets:
         Release:
           SWIFT_OPTIMIZATION_LEVEL: "-O"
           SWIFT_COMPILATION_MODE: wholemodule
+    dependencies:
+      - framework: build/OrcaSlicerCore.xcframework
+        optional: true
+        embed: false
     info:
       path: OrcaSlicer/Info.plist
     entitlements:

@@ -3,6 +3,7 @@ import SwiftUI
 struct SliceView: View {
     @EnvironmentObject private var appState: AppState
     @State private var showingExportSheet = false
+    @State private var showGCodeViewer = false
 
     var body: some View {
         NavigationStack {
@@ -28,10 +29,20 @@ struct SliceView: View {
             .toolbar {
                 if appState.sliceResult?.isSuccess == true {
                     ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            showingExportSheet = true
-                        } label: {
-                            Image(systemName: "square.and.arrow.up")
+                        HStack(spacing: 12) {
+                            Button {
+                                showGCodeViewer = true
+                            } label: {
+                                Image(systemName: "doc.text.magnifyingglass")
+                            }
+                            .accessibilityLabel("View G-code")
+
+                            Button {
+                                showingExportSheet = true
+                            } label: {
+                                Image(systemName: "square.and.arrow.up")
+                            }
+                            .accessibilityLabel("Export G-code")
                         }
                     }
                 }
@@ -39,6 +50,27 @@ struct SliceView: View {
             .sheet(isPresented: $showingExportSheet) {
                 if let gcodeURL = appState.sliceResult?.gcodeURL {
                     ShareSheet(items: [gcodeURL])
+                }
+            }
+            .fullScreenCover(isPresented: $showGCodeViewer) {
+                NavigationStack {
+                    GCodeView(gcodeURL: appState.sliceResult?.gcodeURL)
+                        .navigationTitle("G-code Preview")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") {
+                                    showGCodeViewer = false
+                                }
+                            }
+                            ToolbarItem(placement: .primaryAction) {
+                                Button {
+                                    showingExportSheet = true
+                                } label: {
+                                    Image(systemName: "square.and.arrow.up")
+                                }
+                            }
+                        }
                 }
             }
         }

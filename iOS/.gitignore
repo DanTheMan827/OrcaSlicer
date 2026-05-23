@@ -15,6 +15,9 @@ build/
 !default.perspectivev3
 xcuserdata/
 
+# Generated Xcode project (regenerate with xcodegen)
+OrcaSlicer.xcodeproj/
+
 # Swift Package Manager
 .build/
 .swiftpm/
@@ -25,3 +28,6 @@ Pods/
 
 # macOS
 .DS_Store
+
+# Build artifacts
+xcode_build/

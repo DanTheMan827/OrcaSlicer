@@ -41,9 +41,6 @@ let package = Package(
                 "App/",
                 "Views/",
                 "Services/"
-            ],
-            resources: [
-                .process("Resources/Assets.xcassets")
             ]
         ),
     ]

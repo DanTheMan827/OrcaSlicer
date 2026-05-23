@@ -1,0 +1,230 @@
+name: Build iOS App
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'iOS/**'
+      - 'src/libslic3r/**'
+      - 'deps/**'
+      - '.github/workflows/build_ios.yml'
+  pull_request:
+    branches: ['**']
+    paths:
+      - 'iOS/**'
+      - 'src/libslic3r/**'
+      - 'deps/**'
+      - '.github/workflows/build_ios.yml'
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_ios_deps:
+    name: Build iOS Dependencies
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          lfs: false
+
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~4.3.0"
+          useLocalCache: true
+          useCloudCache: true
+
+      - name: Cache iOS Dependencies
+        id: cache-ios-deps
+        uses: actions/cache@v5
+        with:
+          path: deps/build/ios-arm64/OrcaSlicer_dep
+          key: ios-deps-arm64-${{ hashFiles('deps/**/*.cmake', 'deps/CMakeLists.txt') }}
+
+      - name: Install build tools
+        if: steps.cache-ios-deps.outputs.cache-hit != 'true'
+        run: brew install automake texinfo libtool ninja
+
+      - name: Build dependencies for iOS arm64
+        if: steps.cache-ios-deps.outputs.cache-hit != 'true'
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -e
+          DEPS_DIR="${{ github.workspace }}/deps"
+          DEPS_BUILD_DIR="$DEPS_DIR/build/ios-arm64"
+          mkdir -p "$DEPS_BUILD_DIR"
+          cd "$DEPS_BUILD_DIR"
+
+          cmake "$DEPS_DIR" \
+            -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/iOS/cmake/ios.toolchain.cmake" \
+            -DIOS_PLATFORM=OS \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DDESTDIR="$DEPS_BUILD_DIR/OrcaSlicer_dep" \
+            -DDEP_DOWNLOAD_DIR="$DEPS_DIR/DL_CACHE"
+
+          cmake --build . --config Release --target deps
+
+      - name: Upload iOS deps artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-deps-arm64
+          path: deps/build/ios-arm64/OrcaSlicer_dep
+          retention-days: 7
+
+  build_libslic3r_ios:
+    name: Build libslic3r for iOS
+    needs: build_ios_deps
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          lfs: false
+
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~4.3.0"
+          useLocalCache: true
+          useCloudCache: true
+
+      - name: Install Ninja
+        run: brew install ninja
+
+      - name: Download iOS deps
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-deps-arm64
+          path: deps/build/ios-arm64/OrcaSlicer_dep
+
+      - name: Build libslic3r for iOS arm64
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -e
+          DEPS_PREFIX="${{ github.workspace }}/deps/build/ios-arm64/OrcaSlicer_dep/usr/local"
+          BUILD_DIR="${{ github.workspace }}/build/ios-arm64"
+          mkdir -p "$BUILD_DIR"
+          cd "$BUILD_DIR"
+
+          cmake "${{ github.workspace }}" \
+            -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/iOS/cmake/ios.toolchain.cmake" \
+            -DIOS_PLATFORM=OS \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$DEPS_PREFIX" \
+            -DSLIC3R_GUI=OFF \
+            -DSLIC3R_STATIC=ON \
+            -DBUILD_TESTS=OFF \
+            -DORCA_TOOLS=OFF \
+            -DSLIC3R_BUILD_SANDBOXES=OFF
+
+          # Build libslic3r and libslic3r_cgal
+          cmake --build . --config Release --target libslic3r libslic3r_cgal
+
+      - name: Verify built libraries
+        run: |
+          echo "=== Built static libraries ==="
+          find build/ios-arm64/src/libslic3r -name "*.a" -exec ls -lh {} \;
+          echo ""
+          echo "=== Checking architecture ==="
+          for lib in build/ios-arm64/src/libslic3r/*.a; do
+            echo "$lib:"
+            lipo -info "$lib"
+          done
+
+      - name: Upload libslic3r artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libslic3r-ios-arm64
+          path: |
+            build/ios-arm64/src/libslic3r/liblibslic3r.a
+            build/ios-arm64/src/libslic3r/liblibslic3r_cgal.a
+            build/ios-arm64/src/libslic3r/libslic3r_version.h
+          retention-days: 7
+
+  build_ios_app:
+    name: Build iOS App
+    needs: [build_ios_deps, build_libslic3r_ios]
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          lfs: false
+
+      - name: Download iOS deps
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-deps-arm64
+          path: deps/build/ios-arm64/OrcaSlicer_dep
+
+      - name: Download libslic3r
+        uses: actions/download-artifact@v4
+        with:
+          name: libslic3r-ios-arm64
+          path: iOS/build/device/src/libslic3r
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+
+      - name: Configure project for libslic3r linking
+        working-directory: ${{ github.workspace }}/iOS
+        run: |
+          # Update project.yml to enable libslic3r linking
+          sed -i '' 's/ORCA_HAS_LIBSLIC3R=0/ORCA_HAS_LIBSLIC3R=1/' project.yml
+
+          # Set correct paths for CI
+          DEPS_PREFIX="${{ github.workspace }}/deps/build/ios-arm64/OrcaSlicer_dep/usr/local"
+          LIBSLIC3R_DIR="${{ github.workspace }}/iOS/build/device/src/libslic3r"
+
+          # Update header and library search paths to absolute CI paths
+          sed -i '' "s|\$(SRCROOT)/build/deps/OS/OrcaSlicer_dep/usr/local|${DEPS_PREFIX}|g" project.yml
+          sed -i '' "s|\$(SRCROOT)/build/device/src/libslic3r|${LIBSLIC3R_DIR}|g" project.yml
+          sed -i '' "s|\$(SRCROOT)/../src|${{ github.workspace }}/src|g" project.yml
+
+      - name: Generate Xcode project
+        working-directory: ${{ github.workspace }}/iOS
+        run: xcodegen generate
+
+      - name: Build iOS app
+        working-directory: ${{ github.workspace }}/iOS
+        run: |
+          xcodebuild build \
+            -project OrcaSlicer.xcodeproj \
+            -scheme OrcaSlicer \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -allowProvisioningUpdates \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=NO | xcpretty || true
+
+          # If xcpretty isn't available, fall back to raw output
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            xcodebuild build \
+              -project OrcaSlicer.xcodeproj \
+              -scheme OrcaSlicer \
+              -configuration Release \
+              -destination 'generic/platform=iOS' \
+              CODE_SIGN_IDENTITY="-" \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO \
+              ONLY_ACTIVE_ARCH=NO
+          fi
+
+      - name: Upload iOS app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OrcaSlicer-iOS-${{ github.sha }}
+          path: iOS/build/Release-iphoneos/OrcaSlicer.app
+          retention-days: 14
+          if-no-files-found: warn

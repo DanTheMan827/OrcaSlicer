@@ -103,4 +103,60 @@ struct PrintProfile: Codable {
         profile.printSpeed = 60.0
         return profile
     }
+
+    /// Convert to a dictionary of libslic3r config key-value pairs
+    /// for passing through the ObjC++ bridge.
+    func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = [
+            "layer_height": layerHeight,
+            "first_layer_height": firstLayerHeight,
+            "wall_loops": wallLoops,
+            "top_shell_layers": topShellLayers,
+            "bottom_shell_layers": bottomShellLayers,
+            "sparse_infill_density": infillDensity,
+            "sparse_infill_pattern": infillPatternConfigValue,
+            "outer_wall_speed": printSpeed,
+            "travel_speed": travelSpeed,
+            "enable_support": supportEnabled ? "1" : "0",
+            "nozzle_temperature": nozzleTemperature,
+            "bed_temperature": bedTemperature,
+            "nozzle_temperature_initial_layer": firstLayerNozzleTemperature,
+            "bed_temperature_initial_layer": firstLayerBedTemperature,
+            "fan_max_speed": fanSpeed,
+            "retraction_length": retractionLength,
+            "retraction_speed": retractionSpeed,
+        ]
+
+        if supportEnabled {
+            dict["support_type"] = supportTypeConfigValue
+        }
+
+        dict["skirt_loops"] = adhesionType == .skirt ? "1" : "0"
+        dict["brim_type"] = adhesionType == .brim ? "outer_only" : "no_brim"
+        dict["raft_layers"] = adhesionType == .raft ? "3" : "0"
+
+        return dict
+    }
+
+    private var infillPatternConfigValue: String {
+        switch infillPattern {
+        case .grid: return "grid"
+        case .triangles: return "triangles"
+        case .cubic: return "cubic"
+        case .gyroid: return "gyroid"
+        case .honeycomb: return "honeycomb"
+        case .line: return "line"
+        case .concentric: return "concentric"
+        case .adaptiveCubic: return "adaptivecubic"
+        case .lightning: return "lightning"
+        }
+    }
+
+    private var supportTypeConfigValue: String {
+        switch supportType {
+        case .normal: return "normal(auto)"
+        case .tree: return "tree(auto)"
+        case .organic: return "tree(auto)"
+        }
+    }
 }

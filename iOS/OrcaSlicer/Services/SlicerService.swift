@@ -1,8 +1,13 @@
 import Foundation
 
 /// Service that interfaces with the libslic3r C++ engine for slicing operations.
-/// This is the Swift-side bridge that will call into the ObjC++ wrapper.
+/// Calls through OrcaSlicerBridge (ObjC++) which links against the native libslic3r library.
 final class SlicerService: Sendable {
+
+    /// Initialize the slicing engine. Should be called on app launch.
+    func initializeEngine() -> Bool {
+        return OrcaSlicerBridge.shared.initializeEngine()
+    }
 
     /// Slice a model with the given profile and printer configuration.
     /// - Parameters:
@@ -17,34 +22,72 @@ final class SlicerService: Sendable {
         printer: Printer,
         progressHandler: @escaping @Sendable (Double) -> Void
     ) async throws -> SliceResult {
-        // TODO: Bridge to libslic3r via OrcaSlicerBridge
-        // For now, simulate slicing with a placeholder implementation
-        // that demonstrates the async pattern.
+        // Build config dictionaries for the bridge
+        let printConfig = profile.toDictionary()
+        let printerConfig = printer.toConfigDictionary()
 
-        // Simulate progress updates
-        for i in 0...10 {
-            let progress = Double(i) / 10.0
-            progressHandler(progress)
-            try await Task.sleep(nanoseconds: 100_000_000)
-        }
-
-        // In production, this calls:
-        // OrcaSlicerBridge.shared.slice(modelPath:profileDict:printerDict:)
+        // Determine output path
         let outputDir = FileManager.default.temporaryDirectory
         let gcodeURL = outputDir.appendingPathComponent("\(model.name).gcode")
 
-        return SliceResult(
-            gcodeURL: gcodeURL,
-            estimatedTime: 3600, // placeholder
-            estimatedFilament: 12.5, // placeholder
-            layerCount: 200, // placeholder
-            error: nil
-        )
+        // Call through the ObjC++ bridge to libslic3r
+        return try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                var bridgeError: NSError?
+                let result = OrcaSlicerBridge.shared.sliceModel(
+                    atPath: model.fileURL.path,
+                    outputPath: gcodeURL.path,
+                    config: printConfig,
+                    printerConfig: printerConfig,
+                    progressHandler: { progress in
+                        progressHandler(progress)
+                    },
+                    error: &bridgeError
+                )
+
+                if let error = bridgeError {
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                let sliceResult = SliceResult(
+                    gcodeURL: gcodeURL,
+                    estimatedTime: result?["estimatedTime"]?.doubleValue ?? 0,
+                    estimatedFilament: result?["estimatedFilament"]?.doubleValue ?? 0,
+                    layerCount: result?["layerCount"]?.intValue ?? 0,
+                    error: nil
+                )
+                continuation.resume(returning: sliceResult)
+            }
+        }
+    }
+
+    /// Load and validate a model file using libslic3r.
+    /// Returns model metadata (vertices, faces, dimensions).
+    func loadModelInfo(at url: URL) -> [String: Any]? {
+        var error: NSError?
+        let info = OrcaSlicerBridge.shared.loadModel(atPath: url.path, error: &error)
+        return info as? [String: Any]
     }
 
     /// Validate that a model file can be loaded.
     func validateModel(at url: URL) -> Bool {
         let ext = url.pathExtension.lowercased()
         return ["stl", "obj", "3mf", "step", "stp"].contains(ext)
+    }
+
+    /// Get available printer profiles from the bundled resources.
+    func availablePrinterProfiles() -> [[String: Any]] {
+        return OrcaSlicerBridge.shared.availablePrinterProfiles() as? [[String: Any]] ?? []
+    }
+
+    /// Get available print quality profiles.
+    func availablePrintProfiles() -> [[String: Any]] {
+        return OrcaSlicerBridge.shared.availablePrintProfiles() as? [[String: Any]] ?? []
+    }
+
+    /// Get the engine version string.
+    var engineVersion: String {
+        return OrcaSlicerBridge.shared.engineVersion
     }
 }
