@@ -70,7 +70,8 @@ jobs:
             -DDESTDIR="$DEPS_BUILD_DIR/OrcaSlicer_dep" \
             -DDEP_DOWNLOAD_DIR="${{ github.workspace }}/deps/DL_CACHE"
 
-          cmake --build . --config Release --target deps
+          # Use -j 1 at top level so ExternalProject errors are visible in CI logs
+          cmake --build . --config Release --target deps -- -j 1
 
       - name: Upload iOS deps artifact
         uses: actions/upload-artifact@v4

@@ -74,13 +74,17 @@ endif()
 message(STATUS "iOS Deployment Target: ${DEP_OSX_TARGET}")
 
 # Include platform-specific cmake opts from deps-macos.cmake
-set(DEP_WERRORS_SDK "-Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new")
+# For iOS, we use -target arm64-apple-ios16.0 instead of -mmacosx-version-min
+set(DEP_WERRORS_SDK "")
+set(IOS_TARGET_FLAG "-target arm64-apple-ios${DEP_OSX_TARGET}")
+set(IOS_SYSROOT_FLAG "-isysroot ${CMAKE_OSX_SYSROOT}")
 set(DEP_CMAKE_OPTS
     "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
     "-DCMAKE_OSX_SYSROOT=${CMAKE_OSX_SYSROOT}"
     "-DCMAKE_OSX_DEPLOYMENT_TARGET=${DEP_OSX_TARGET}"
-    "-DCMAKE_CXX_FLAGS=${DEP_WERRORS_SDK}"
-    "-DCMAKE_C_FLAGS=${DEP_WERRORS_SDK}"
+    "-DCMAKE_SYSTEM_NAME=iOS"
+    "-DCMAKE_CXX_FLAGS=${IOS_TARGET_FLAG} ${IOS_SYSROOT_FLAG}"
+    "-DCMAKE_C_FLAGS=${IOS_TARGET_FLAG} ${IOS_SYSROOT_FLAG}"
     "-DCMAKE_FIND_FRAMEWORK=LAST"
     "-DCMAKE_FIND_APPBUNDLE=LAST"
 )
@@ -88,9 +92,30 @@ set(DEP_CMAKE_OPTS
 find_package(Git REQUIRED)
 set(PATCH_CMD ${GIT_EXECUTABLE} apply --verbose --ignore-space-change --whitespace=fix)
 
+# Variables needed by dep .cmake files for PATCH_COMMAND paths
+execute_process(
+    COMMAND ${GIT_EXECUTABLE} rev-parse --is-inside-work-tree
+    RESULT_VARIABLE REV_PARSE_RESULT
+    OUTPUT_VARIABLE REV_PARSE_OUTPUT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if((REV_PARSE_RESULT EQUAL 0) AND (REV_PARSE_OUTPUT STREQUAL "true"))
+    set(IN_GIT_REPO TRUE)
+    file(RELATIVE_PATH BINARY_DIR_REL ${CMAKE_SOURCE_DIR}/.. ${CMAKE_BINARY_DIR})
+endif()
+
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
+
+# Mark as cross-compiling for deps that check this
+set(CMAKE_CROSSCOMPILING TRUE)
+# For autotools-based deps (GMP, MPFR) that use --host
+set(TOOLCHAIN_PREFIX "aarch64-apple-ios")
+
+# Override linker flags to include sysroot for all builds
+set(CMAKE_EXE_LINKER_FLAGS "${IOS_TARGET_FLAG} ${IOS_SYSROOT_FLAG}")
 
 # --- orcaslicer_add_cmake_project function (from main deps/CMakeLists.txt) ---
 # Simplified for iOS cross-compilation (always cross-compile path)
@@ -116,6 +141,9 @@ function(orcaslicer_add_cmake_project projectname)
             -DCMAKE_INSTALL_PREFIX:STRING=${DESTDIR}
             -DCMAKE_PREFIX_PATH:STRING=${DESTDIR}
             -DCMAKE_IGNORE_PREFIX_PATH:STRING=${CMAKE_IGNORE_PREFIX_PATH}
+            -DCMAKE_C_COMPILER:STRING=${CMAKE_C_COMPILER}
+            -DCMAKE_CXX_COMPILER:STRING=${CMAKE_CXX_COMPILER}
+            -DCMAKE_TOOLCHAIN_FILE:STRING=${CMAKE_TOOLCHAIN_FILE}
             -DBUILD_SHARED_LIBS:BOOL=OFF
             ${_cmake_osx_arch}
             "${_configs_line}"
