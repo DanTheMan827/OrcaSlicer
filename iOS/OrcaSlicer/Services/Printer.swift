@@ -31,6 +31,11 @@ struct Printer: Identifiable, Codable, Hashable {
 
     var bedSize: BedSize
 
+    /// Build plate width in mm (convenience for rendering)
+    var buildPlateWidth: Double { bedSize.width }
+    /// Build plate depth in mm (convenience for rendering)
+    var buildPlateDepth: Double { bedSize.depth }
+
     static var `default`: Printer {
         Printer(
             id: UUID(),

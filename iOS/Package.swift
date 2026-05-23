@@ -35,12 +35,14 @@ let package = Package(
                 "Info.plist",
                 "OrcaSlicer.entitlements",
                 "Preview Content",
-                "Resources/Assets.xcassets"
+                "Resources/Assets.xcassets",
+                "Renderer/Shaders.metal"
             ],
             sources: [
                 "App/",
                 "Views/",
-                "Services/"
+                "Services/",
+                "Renderer/"
             ]
         ),
     ]

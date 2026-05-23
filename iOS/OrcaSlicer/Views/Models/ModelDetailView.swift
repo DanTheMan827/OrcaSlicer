@@ -8,6 +8,8 @@ struct ModelDetailView: View {
     @State private var transform: ModelTransform = .identity
     @State private var modelInfo: ModelInfo?
 
+    @State private var meshRenderData: MeshRenderData?
+
     struct ModelInfo {
         let vertexCount: Int
         let faceCount: Int
@@ -16,17 +18,24 @@ struct ModelDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 3D Preview
-            ModelViewer(modelURL: model.fileURL)
-                .frame(maxHeight: .infinity)
-                .overlay(alignment: .topTrailing) {
-                    viewerControls
+            // 3D Preview - use Metal renderer when mesh data available
+            Group {
+                if meshRenderData != nil {
+                    ModelViewer3D(
+                        meshData: meshRenderData,
+                        buildPlateWidth: Float(appState.selectedPrinter?.buildPlateWidth ?? 256),
+                        buildPlateDepth: Float(appState.selectedPrinter?.buildPlateDepth ?? 256)
+                    )
+                } else {
+                    ModelViewer(modelURL: model.fileURL)
                 }
-                .overlay(alignment: .bottomLeading) {
-                    if let info = modelInfo {
-                        modelDimensionsOverlay(info)
-                    }
+            }
+            .frame(maxHeight: .infinity)
+            .overlay(alignment: .bottomLeading) {
+                if let info = modelInfo {
+                    modelDimensionsOverlay(info)
                 }
+            }
 
             // Transform panel (collapsible)
             if showTransformPanel {
@@ -92,38 +101,7 @@ struct ModelDetailView: View {
     }
 
     private var viewerControls: some View {
-        VStack(spacing: 8) {
-            Button {
-                // Reset camera
-            } label: {
-                Image(systemName: "arrow.counterclockwise")
-                    .font(.body)
-                    .padding(10)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
-            }
-            Button {
-                // Toggle wireframe
-            } label: {
-                Image(systemName: "square.grid.3x3")
-                    .font(.body)
-                    .padding(10)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
-            }
-            Button {
-                withAnimation {
-                    showTransformPanel.toggle()
-                }
-            } label: {
-                Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
-                    .font(.body)
-                    .padding(10)
-                    .background(showTransformPanel ? AnyShapeStyle(.accent.opacity(0.2)) : AnyShapeStyle(.ultraThinMaterial))
-                    .clipShape(Circle())
-            }
-        }
-        .padding()
+        EmptyView() // Controls are now part of ModelViewer3D
     }
 
     private func modelDimensionsOverlay(_ info: ModelInfo) -> some View {
@@ -167,8 +145,29 @@ struct ModelDetailView: View {
                 faceCount: mesh.faceCount,
                 dimensions: (mesh.dimensions.x, mesh.dimensions.y, mesh.dimensions.z)
             )
+
+            // Build Metal render data from parsed STL
+            var vertices: [SIMD3<Float>] = []
+            var normals: [SIMD3<Float>] = []
+            vertices.reserveCapacity(mesh.triangles.count * 3)
+            normals.reserveCapacity(mesh.triangles.count * 3)
+
+            for triangle in mesh.triangles {
+                let n = SIMD3<Float>(triangle.normal.x, triangle.normal.y, triangle.normal.z)
+                for vertex in triangle.vertices {
+                    vertices.append(SIMD3<Float>(vertex.x, vertex.y, vertex.z))
+                    normals.append(n)
+                }
+            }
+
+            let volumeData = VolumeRenderData(
+                vertices: vertices,
+                normals: normals,
+                color: SIMD4<Float>(1.0, 0.5, 0.0, 1.0) // OrcaSlicer orange
+            )
+            meshRenderData = MeshRenderData(volumes: [volumeData])
         } catch {
-            // Model info not available
+            // Model info not available, fallback to SceneKit viewer
         }
     }
 }
