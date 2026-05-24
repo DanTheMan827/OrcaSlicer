@@ -92,18 +92,9 @@ set(DEP_CMAKE_OPTS
 find_package(Git REQUIRED)
 set(PATCH_CMD ${GIT_EXECUTABLE} apply --verbose --ignore-space-change --whitespace=fix)
 
-# Variables needed by dep .cmake files for PATCH_COMMAND paths
-execute_process(
-    COMMAND ${GIT_EXECUTABLE} rev-parse --is-inside-work-tree
-    RESULT_VARIABLE REV_PARSE_RESULT
-    OUTPUT_VARIABLE REV_PARSE_OUTPUT
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
-)
-if((REV_PARSE_RESULT EQUAL 0) AND (REV_PARSE_OUTPUT STREQUAL "true"))
-    set(IN_GIT_REPO TRUE)
-    file(RELATIVE_PATH BINARY_DIR_REL ${CMAKE_SOURCE_DIR}/.. ${CMAKE_BINARY_DIR})
-endif()
+# iOS deps build in a nested out-of-tree directory where repo-relative
+# --directory patch flags are not valid. Force plain git apply patch commands.
+set(IN_GIT_REPO FALSE)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
