@@ -93,7 +93,8 @@ find_package(Git REQUIRED)
 set(PATCH_CMD ${GIT_EXECUTABLE} apply --verbose --ignore-space-change --whitespace=fix)
 
 # iOS deps build in a nested out-of-tree directory where repo-relative
-# --directory patch flags are not valid. Force plain git apply patch commands.
+# git apply --directory=<path> patch flags are not valid. Force dependency
+# modules to use plain git apply patch commands.
 set(IN_GIT_REPO FALSE)
 
 if (NOT CMAKE_BUILD_TYPE)
