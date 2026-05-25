@@ -72,7 +72,6 @@ else ()
         # TOOLCHAIN_PREFIX should be defined in the toolchain file
         set(_cross_compile_arg --host=${TOOLCHAIN_PREFIX})
     endif ()
-    set(_gmp_extra_configure_args "")
     if (CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "iOS")
         # GMP's hand-written assembly for Darwin/AArch64 emits relocations
         # that fail under iOS cross compilation in CI; use portable C code.
