@@ -44,7 +44,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: deps/build/ios-arm64/OrcaSlicer_dep
-          key: ios-deps-arm64-${{ hashFiles('deps/**/*.cmake', 'deps/CMakeLists.txt') }}
+          key: ios-deps-arm64-${{ hashFiles('deps/**/*.cmake', 'deps/CMakeLists.txt', 'iOS/deps/CMakeLists.txt', 'iOS/cmake/ios.toolchain.cmake') }}
 
       - name: Install build tools
         if: steps.cache-ios-deps.outputs.cache-hit != 'true'

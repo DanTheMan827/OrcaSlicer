@@ -46,8 +46,12 @@ if ("${DESTDIR}" STREQUAL "")
     set(DESTDIR "${CMAKE_BINARY_DIR}/OrcaSlicer_dep" CACHE PATH "Path to dependencies install directory" FORCE)
 endif()
 
+# Append /usr/local so the layout matches the main deps build and the
+# workflow's DEPS_PREFIX (which points to OrcaSlicer_dep/usr/local).
+set(DESTDIR "${DESTDIR}/usr/local")
+
 message(STATUS "iOS deps DESTDIR: ${DESTDIR}")
-message(STATUS "iOS deps prefix: ${DESTDIR}/usr/local")
+message(STATUS "iOS deps prefix: ${DESTDIR}")
 
 # --- Platform setup (mirroring main deps/CMakeLists.txt) ---
 
