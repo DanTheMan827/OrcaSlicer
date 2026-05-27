@@ -259,6 +259,7 @@ set(_dep_list
     dep_CGAL
     dep_OCCT
     ${FREETYPE_PKG}
+    ${JPEG_PKG}
     ${PNG_PKG}
     ${ZLIB_PKG}
     ${EXPAT_PKG}
