@@ -9,7 +9,7 @@
 #     -DCMAKE_TOOLCHAIN_FILE=<path>/ios.toolchain.cmake \
 #     -DCMAKE_OSX_ARCHITECTURES=arm64 \
 #     -DCMAKE_BUILD_TYPE=Release \
-#     -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+#     -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 \
 #     -DDESTDIR=<output-path>
 #   cmake --build . --target deps
 
@@ -20,7 +20,7 @@ endif()
 cmake_minimum_required(VERSION 3.2)
 
 if (NOT CMAKE_OSX_DEPLOYMENT_TARGET)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "16.0" CACHE STRING "Minimum iOS deployment version" FORCE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "18.0" CACHE STRING "Minimum iOS deployment version" FORCE)
 endif()
 
 if(POLICY CMP0135)
@@ -73,12 +73,12 @@ set(_cmake_args_osx_arch CMAKE_ARGS -DCMAKE_OSX_ARCHITECTURES:STRING=${CMAKE_OSX
 if (CMAKE_OSX_DEPLOYMENT_TARGET)
     set(DEP_OSX_TARGET "${CMAKE_OSX_DEPLOYMENT_TARGET}")
 else()
-    set(DEP_OSX_TARGET "16.0")
+    set(DEP_OSX_TARGET "18.0")
 endif()
 message(STATUS "iOS Deployment Target: ${DEP_OSX_TARGET}")
 
 # Include platform-specific cmake opts from deps-macos.cmake
-# For iOS, we use -target arm64-apple-ios16.0 instead of -mmacosx-version-min
+# For iOS, we use -target arm64-apple-ios18.0 instead of -mmacosx-version-min
 set(DEP_WERRORS_SDK "")
 set(IOS_TARGET_FLAG "-target arm64-apple-ios${DEP_OSX_TARGET}")
 set(IOS_SYSROOT_FLAG "-isysroot ${CMAKE_OSX_SYSROOT}")

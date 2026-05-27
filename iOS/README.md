@@ -5,7 +5,7 @@ A native SwiftUI application for iOS and iPadOS that provides 3D model slicing c
 ## Requirements
 
 - Xcode 15.0+
-- iOS 16.0+ / iPadOS 16.0+
+- iOS 18.0+ / iPadOS 18.0+
 - Swift 5.9+
 - CMake 3.13+ (for building libslic3r)
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) (for project generation)
@@ -61,7 +61,7 @@ cd iOS
 mkdir xcode_build && cd xcode_build
 cmake .. -G Xcode \
     -DCMAKE_SYSTEM_NAME=iOS \
-    -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+    -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 \
     -DLIBSLIC3R_ROOT=../build/device \
     -DDEPS_PREFIX=../build/deps/OS/OrcaSlicer_dep/usr/local
 ```

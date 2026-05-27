@@ -68,7 +68,7 @@ jobs:
             -DIOS_PLATFORM=OS \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 \
             -DDESTDIR="$DEPS_BUILD_DIR/OrcaSlicer_dep" \
             -DDEP_DOWNLOAD_DIR="${{ github.workspace }}/deps/DL_CACHE"
 
@@ -122,6 +122,7 @@ jobs:
             -DIOS_PLATFORM=OS \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 \
             -DCMAKE_PREFIX_PATH="$DEPS_PREFIX" \
             -DSLIC3R_GUI=OFF \
             -DSLIC3R_STATIC=ON \

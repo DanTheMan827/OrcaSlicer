@@ -12,7 +12,7 @@
 #   mkdir xcode_build && cd xcode_build
 #   cmake .. -G Xcode \
 #       -DCMAKE_SYSTEM_NAME=iOS \
-#       -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+#       -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0 \
 #       -DLIBSLIC3R_ROOT=../build/device
 #
 
@@ -25,8 +25,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_Swift_LANGUAGE_VERSION 5.9)
 
 # iOS deployment target
-set(CMAKE_OSX_DEPLOYMENT_TARGET "16.0" CACHE STRING "Minimum iOS deployment target")
-set(CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "16.0")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "18.0" CACHE STRING "Minimum iOS deployment target")
+set(CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "18.0")
 
 # Paths to pre-built libslic3r
 if(NOT DEFINED LIBSLIC3R_ROOT)
