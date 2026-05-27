@@ -7,6 +7,7 @@ on:
       - 'iOS/**'
       - 'src/libslic3r/**'
       - 'deps/**'
+      - 'CMakeLists.txt'
       - '.github/workflows/build_ios.yml'
   pull_request:
     branches: ['**']
@@ -14,6 +15,7 @@ on:
       - 'iOS/**'
       - 'src/libslic3r/**'
       - 'deps/**'
+      - 'CMakeLists.txt'
       - '.github/workflows/build_ios.yml'
 
 permissions:
