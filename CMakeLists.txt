@@ -681,14 +681,16 @@ endif ()
 
 find_package(PNG REQUIRED)
 
-set(OpenGL_GL_PREFERENCE "LEGACY")
-find_package(OpenGL REQUIRED)
+if(SLIC3R_GUI)
+    set(OpenGL_GL_PREFERENCE "LEGACY")
+    find_package(OpenGL REQUIRED)
 
-if(APPLE AND CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
-    set(OPENGL_LIBRARIES "-framework OpenGL" CACHE STRING "OpenGL framework" FORCE)
+    if(APPLE AND CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
+        set(OPENGL_LIBRARIES "-framework OpenGL" CACHE STRING "OpenGL framework" FORCE)
+    endif()
+
+    find_package(glfw3 REQUIRED)
 endif()
-
-find_package(glfw3 REQUIRED)
 
 # Find the Cereal serialization library
 find_package(cereal REQUIRED)
