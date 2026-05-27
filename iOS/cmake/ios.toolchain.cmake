@@ -66,11 +66,14 @@ set(CMAKE_XCODE_ATTRIBUTE_ENABLE_BITCODE "NO")
 # Standard library
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 
-# Don't search host paths
+# Don't search host paths for programs
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+# Use BOTH so that dep sub-projects can find previously-installed deps
+# (e.g. Boost headers/libs in DESTDIR) via CMAKE_PREFIX_PATH while still
+# respecting the iOS SDK sysroot for system artifacts.
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY BOTH)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
 
 # Disable GUI-related dependencies that aren't needed for iOS
 set(SLIC3R_GUI OFF CACHE BOOL "Disable GUI for iOS static library" FORCE)
