@@ -87,6 +87,11 @@ set(DEP_CMAKE_OPTS
     "-DCMAKE_C_FLAGS=${IOS_TARGET_FLAG} ${IOS_SYSROOT_FLAG}"
     "-DCMAKE_FIND_FRAMEWORK=LAST"
     "-DCMAKE_FIND_APPBUNDLE=LAST"
+    # Prevent executables from being treated as macOS/iOS bundles.
+    # When CMAKE_SYSTEM_NAME=iOS CMake defaults MACOSX_BUNDLE to ON for
+    # executables, but most dep install() commands omit BUNDLE DESTINATION
+    # which causes a configure-time error.
+    "-DCMAKE_MACOSX_BUNDLE=OFF"
 )
 
 find_package(Git REQUIRED)
