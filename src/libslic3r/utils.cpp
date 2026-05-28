@@ -31,8 +31,11 @@
 		#include <sys/sysctl.h>
 	#endif
 	#ifdef __APPLE__
+		#include <TargetConditionals.h>
 		#include <mach/mach.h>
-		#include <libproc.h>
+		#if !TARGET_OS_IPHONE
+			#include <libproc.h>
+		#endif
 	#endif
 	#ifdef __linux__
 		#include <sys/stat.h>
@@ -1252,7 +1255,7 @@ std::string get_process_name(int pid)
 	while (auto q = strchr(p + 1, '\\'))
 		p = q;
 	return decode_path(p);
-#elif defined __APPLE__
+#elif defined(__APPLE__) && !TARGET_OS_IPHONE
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE] = { 0 };
 	if (pid == 0) pid = ::getpid();
 	int ret = proc_pidpath(pid, pathbuf, sizeof(pathbuf));
