@@ -47,6 +47,17 @@ jobs:
         with:
           path: deps/build/ios-arm64/OrcaSlicer_dep
           key: ios-deps-arm64-${{ hashFiles('deps/**/*.cmake', 'deps/CMakeLists.txt', 'iOS/deps/CMakeLists.txt', 'iOS/cmake/ios.toolchain.cmake') }}
+          restore-keys: |
+            ios-deps-arm64-
+
+      - name: Cache dependency downloads
+        if: steps.cache-ios-deps.outputs.cache-hit != 'true'
+        uses: actions/cache@v5
+        with:
+          path: deps/DL_CACHE
+          key: ios-deps-downloads-${{ hashFiles('deps/**/*.cmake', 'deps/CMakeLists.txt') }}
+          restore-keys: |
+            ios-deps-downloads-
 
       - name: Install build tools
         if: steps.cache-ios-deps.outputs.cache-hit != 'true'
@@ -92,22 +103,38 @@ jobs:
         with:
           lfs: false
 
+      - name: Cache libslic3r build
+        id: cache-libslic3r
+        uses: actions/cache@v5
+        with:
+          path: |
+            build/ios-arm64/src/libslic3r/liblibslic3r.a
+            build/ios-arm64/src/libslic3r/liblibslic3r_cgal.a
+            build/ios-arm64/src/libslic3r/libslic3r_version.h
+          key: ios-libslic3r-arm64-${{ hashFiles('src/libslic3r/**', 'CMakeLists.txt', 'iOS/cmake/ios.toolchain.cmake', 'deps/**/*.cmake') }}
+          restore-keys: |
+            ios-libslic3r-arm64-
+
       - uses: lukka/get-cmake@latest
+        if: steps.cache-libslic3r.outputs.cache-hit != 'true'
         with:
           cmakeVersion: "~4.3.0"
           useLocalCache: true
           useCloudCache: true
 
       - name: Install Ninja
+        if: steps.cache-libslic3r.outputs.cache-hit != 'true'
         run: brew install ninja
 
       - name: Download iOS deps
+        if: steps.cache-libslic3r.outputs.cache-hit != 'true'
         uses: actions/download-artifact@v4
         with:
           name: ios-deps-arm64
           path: deps/build/ios-arm64/OrcaSlicer_dep
 
       - name: Build libslic3r for iOS arm64
+        if: steps.cache-libslic3r.outputs.cache-hit != 'true'
         working-directory: ${{ github.workspace }}
         run: |
           set -e
