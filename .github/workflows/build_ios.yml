@@ -181,8 +181,12 @@ jobs:
 
       - name: Select Xcode
         run: |
-          # Use the latest available Xcode 15.x or fall back to default
-          XCODE_PATH=$(find /Applications -maxdepth 1 -name "Xcode_15*" -print | sort -V | tail -1)
+          # Use the latest available Xcode 16.x (required for project format 77)
+          XCODE_PATH=$(find /Applications -maxdepth 1 -name "Xcode_16*" -print | sort -V | tail -1)
+          if [ -z "$XCODE_PATH" ]; then
+            # Fall back to newest Xcode available
+            XCODE_PATH=$(find /Applications -maxdepth 1 -name "Xcode*" -not -name "Xcode.app" -print | sort -V | tail -1)
+          fi
           if [ -n "$XCODE_PATH" ]; then
             sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
           fi
